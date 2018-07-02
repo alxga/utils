@@ -6,7 +6,9 @@
 */
 
 #include "stdafx.h"
-#include <mpi.h>
+#ifdef HAVE_MPI
+#  include <mpi.h>
+#endif
 #include "Utils/utils.h"
 
 using namespace std;
@@ -126,16 +128,22 @@ MPIApp *MPIApp::sm_mpiApp = NULL;
 MPIApp::MPIApp(const char *name, IDataPool *dp) :
   App(name)
 {
+#ifdef HAVE_MPI
   if (sm_mpiApp != NULL)
     throw Exception("Multiple instances of the MPIApp class");
   sm_mpiApp = this;
 
   m_dp = dp;
   m_mpiRank = 0;
+#else
+  throw Exception("Rebuild the Utils library with HAVE_MPI macro "
+                  "defined to use MPIApp");
+#endif
 }
 
 int MPIApp::run(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
   int retCode = 0;
 
   MPI_Init(&argc, &argv);
@@ -188,10 +196,15 @@ int MPIApp::run(int argc, char *argv[])
   deinitLog();
 
   return retCode;
+#else
+  throw Exception("Rebuild the Utils library with HAVE_MPI macro "
+                  "defined to use MPIApp");
+#endif
 }
 
 int MPIApp::main()
 {
+#ifdef HAVE_MPI
   int mpiSize;
   MPI_Status s;
   MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
@@ -263,10 +276,15 @@ int MPIApp::main()
   log("Returning from runMainMPI\n");
 
   return 0;
+#else
+  throw Exception("Rebuild the Utils library with HAVE_MPI macro "
+                  "defined to use MPIApp");
+#endif
 }
 
 int MPIApp::mainMPI()
 {
+#ifdef HAVE_MPI
   while (true)
   {
     MPI_Status s;
@@ -283,4 +301,8 @@ int MPIApp::mainMPI()
   }
 
   return 0;
+#else
+  throw Exception("Rebuild the Utils library with HAVE_MPI macro "
+                  "defined to use MPIApp");
+#endif
 }

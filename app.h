@@ -48,6 +48,7 @@ protected:
   virtual int main() = 0;
 };
 
+
 class IDataPool
 {
 public:
