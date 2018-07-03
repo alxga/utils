@@ -111,8 +111,8 @@ int App::run(int argc, char *argv[])
   }
   catch (const Exception &e)
   {
-    log("Fatal exception: %s\n", e.message());
-    retCode = 1;
+    log("Unhandled exception: %s\n", e.message());
+    retCode = -1;
   }
 
   deinitLog();
@@ -185,7 +185,7 @@ int MPIApp::run(int argc, char *argv[])
   }
   catch (const Exception &e)
   {
-    log("Fatal exception: %s\n", e.message());
+    log("Unhandled exception: %s\n", e.message());
     retCode = -1;
   }
 

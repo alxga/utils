@@ -13,7 +13,7 @@ Exception::Exception(const char *msg)
 {
   App *app = App::app();
   if (app != NULL)
-    app->log("New Exception: %s", msg);
+    app->log("New Exception: %s\n", msg);
   size_t len = strlen(msg);
   m_msg = new char [len + 1];
   strcpy(m_msg, msg);

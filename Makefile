@@ -1,15 +1,24 @@
 LIB =
-CFLAGS = -O2 -fpic -std=gnu++0x -I.. -I/home/aag2k/usr/include
+CFLAGS = -O2 -fpic -std=gnu++0x -I..
 
-CC = mpicxx
+ifdef HAVE_MPI
+  CC = mpicxx
+  CFLAGS += -DHAVE_MPI
+else
+  CC = g++
+endif
 
-HEADERS = app.h dpoint.h except.h fsutils.h libutils.h mpimsg.h rand01.h \
-          rselect.h stdafx.h strutils.h utils.h
+ifdef BOOST_INC
+  CFLAGS += -DHAVE_BOOST -I$(BOOST_INC)
+endif
 
-SRC = app.cpp dpoint.cpp except.cpp fsutils.cpp rand01.cpp strutils.cpp \
-      utils.cpp
+HEADERS = app.h distr.h dpoint.h except.h fsutils.h libutils.h mpimsg.h \
+          rand01.h rselect.h stdafx.h strutils.h utils.h
 
-OBJ = app.o dpoint.o except.o fsutils.o rand01.o strutils.o utils.o
+SRC = app.cpp distr.cpp dpoint.cpp except.cpp fsutils.cpp rand01.cpp \
+      strutils.cpp utils.cpp
+
+OBJ = app.o distr.o dpoint.o except.o fsutils.o rand01.o strutils.o utils.o
 
 %.o: %.cpp
 	$(CC) -c $(CFLAGS) -o $@ $<
