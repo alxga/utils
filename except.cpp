@@ -23,7 +23,6 @@ Exception::Exception(const char *str, ...)
 
 Exception::~Exception()
 {
-  delete [] m_msg;
 }
 
 
