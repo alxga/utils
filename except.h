@@ -6,6 +6,7 @@
 */
 
 #include "Utils/libutils.h"
+#include "Utils/strutils.h"
 
 #ifndef EXCEPT_HEADER_FILE_INCLUDED
 #define EXCEPT_HEADER_FILE_INCLUDED
@@ -29,10 +30,10 @@
 
 class LIBUTILS_API Exception
 {
-  char *m_msg;
+  char m_msg[MAXTEXTLENGTH];
 
 public:
-  Exception(const char *msg);
+  Exception(const char *msg, ...);
   virtual ~Exception();
 
   inline const char *message() const { return m_msg; }

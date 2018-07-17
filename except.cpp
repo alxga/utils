@@ -9,14 +9,16 @@
 #include "Utils/except.h"
 #include "Utils/app.h"
 
-Exception::Exception(const char *msg)
+Exception::Exception(const char *str, ...)
 {
+  va_list aptr;
+  va_start(aptr, str);
+  vsprintf(m_msg, str, aptr);
+  va_end(aptr);
+
   App *app = App::app();
   if (app != NULL)
-    app->log("New Exception: %s\n", msg);
-  size_t len = strlen(msg);
-  m_msg = new char [len + 1];
-  strcpy(m_msg, msg);
+    app->log("New Exception: %s\n", m_msg);
 }
 
 Exception::~Exception()
