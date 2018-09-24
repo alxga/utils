@@ -73,7 +73,7 @@ void App::log(const char *txt, ...)
     vsprintf(buffer, txt, aptr);
     va_end(aptr);
 
-    fprintf(m_logFile, "%s", buffer);
+    fprintf(m_logFile, "%s" ENDL, buffer);
     fflush(m_logFile);
   }
 }
@@ -102,8 +102,8 @@ int App::run(int argc, char *argv[])
 
   unsigned int seed = (unsigned int) time(NULL);
   srand(seed);
-  log("Random seeded with %X\n", seed);
-  log("Our rank is %d\n", rank());
+  log("Random seeded with %X", seed);
+  log("Our rank is %d", rank());
 
   try
   {
@@ -111,7 +111,7 @@ int App::run(int argc, char *argv[])
   }
   catch (const Exception &e)
   {
-    log("Unhandled exception: %s\n", e.message());
+    log("Unhandled exception: %s", e.message());
     retCode = -1;
   }
 
@@ -173,8 +173,8 @@ int MPIApp::run(int argc, char *argv[])
 
   unsigned int seed = ((unsigned int) time(NULL)) * (m_mpiRank + 1);
   srand(seed);
-  log("Random seeded with %X\n", seed);
-  log("Our rank is %d\n", m_mpiRank);
+  log("Random seeded with %X", seed);
+  log("Our rank is %d", m_mpiRank);
 
   try
   {
@@ -185,7 +185,7 @@ int MPIApp::run(int argc, char *argv[])
   }
   catch (const Exception &e)
   {
-    log("Unhandled exception: %s\n", e.message());
+    log("Unhandled exception: %s", e.message());
     retCode = -1;
   }
 
@@ -210,7 +210,7 @@ int MPIApp::main()
   MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
 
   bool ready = m_dp->checkFS();
-  log("Main ready state is %s\n", ready ? "true" : "false");
+  log("Main ready state is %s", ready ? "true" : "false");
 
   int *tasks = new int [mpiSize];
   auto_del<int> del_tasks(tasks, true);
@@ -249,7 +249,7 @@ int MPIApp::main()
         }
         if (cmd == WMSG_READY)
         {
-          log("Process %d is ready\n", src);
+          log("Process %d is ready", src);
 
           int ix = m_dp->nextIndex();
           if (ix < 0 || !m_dp->createDirs(ix))
@@ -273,7 +273,7 @@ int MPIApp::main()
     ready = mpiSize > 1;
   }
 
-  log("Returning from runMainMPI\n");
+  log("Returning from runMainMPI");
 
   return 0;
 #else
