@@ -18,7 +18,7 @@ Exception::Exception(const char *str, ...)
 
   App *app = App::app();
   if (app != NULL)
-    app->log("New Exception: %s\n", m_msg);
+    app->log("New Exception: %s", m_msg);
 }
 
 Exception::~Exception()

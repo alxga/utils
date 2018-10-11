@@ -19,10 +19,11 @@
 #define MAXTEXTLENGTH 4096
 
 #ifdef WINDOWS
-#  define ENDL "\n\r"
+#  define ENDL "\r\n"
 #else
 #  define ENDL "\n"
 #endif
+#define CSVENDL "\n"
 
 #ifndef WINDOWS
 #  define _stricmp strcasecmp
