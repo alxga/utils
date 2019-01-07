@@ -149,6 +149,7 @@
     <ClInclude Include="except.h" />
     <ClInclude Include="fsutils.h" />
     <ClInclude Include="app.h" />
+    <ClInclude Include="matrix.h" />
     <ClInclude Include="mpimsg.h" />
     <ClInclude Include="rand01.h" />
     <ClInclude Include="rselect.h" />
