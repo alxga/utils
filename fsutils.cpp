@@ -148,4 +148,66 @@ namespace FS
 
     return true;
   }
+
+  bool listDir(const char *dirPath, std::vector<Entry> &list)
+  {
+    list.clear();
+
+#ifndef WINDOWS
+    DIR *hDir = opendir(dirPath);
+    if (hDir == NULL)
+      return false;
+
+    struct dirent *de;
+    while (de = readdir(hDir))
+    {
+      bool isDir;
+#  ifdef _DIRENT_HAVE_D_TYPE
+      if (de->d_type != DT_UNKNOWN && de->d_type != DT_LNK)
+        // don't have to stat if we have d_type info,
+        // unless it's a symlink (since we stat, not lstat)
+        isDir = (de->d_type == DT_DIR);
+      else
+#  endif
+      {
+        // the only method if d_type isn't available, otherwise
+        // this is a fallback for FSes where the kernel leaves it DT_UNKNOWN
+        struct stat stbuf;
+        // stat follows symlinks, lstat doesn't.
+        stat(de->d_name, &stbuf);
+        isDir = S_ISDIR(stbuf.st_mode);
+      }
+      closedir(hDir);
+    }
+#else
+    char path[MAXPATHLENGTH];
+    sprintf(path, "%s\\*", dirPath);
+
+    WIN32_FIND_DATAA FFData;
+    HANDLE hFind;
+    hFind = FindFirstFileA(path, &FFData);
+    if (hFind == INVALID_HANDLE_VALUE)
+      // return true if no files were found as false indicates an error
+      return GetLastError() == ERROR_FILE_NOT_FOUND;
+    else 
+    {
+      char *ptr = FFData.cFileName;
+      bool isDir = (FFData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;
+      // skip "." and ".."
+      if (ptr[0] != '.' || (ptr[1] != 0 && (ptr[1] != '.' || ptr[2] != 0)))
+        list.push_back(Entry(ptr, isDir));
+
+      while (FindNextFileA(hFind, &FFData))
+      {
+        ptr = FFData.cFileName;
+        isDir = (FFData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;
+        // skip "." and ".."
+        if (ptr[0] != '.' || (ptr[1] != 0 && (ptr[1] != '.' || ptr[2] != 0)))
+          list.push_back(Entry(ptr, isDir));
+      }
+
+      FindClose(hFind);
+    }
+#endif
+  }
 }

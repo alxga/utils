@@ -4,6 +4,7 @@
   Licensed under the MIT License.
   See LICENSE file in the project root for full license information.
 */
+#include <vector>
 
 #include "Utils/libutils.h"
 
@@ -24,6 +25,25 @@ namespace FS
 #else
   bool LIBUTILS_API makeDir(const char *rootDir, const char *dirPath, int imode = -1);
 #endif
+  
+  struct Entry
+  {
+    static const int MAXNAMELENGTH = 256;
+    char Name[MAXNAMELENGTH];
+    bool IsDir;
+
+    Entry(const char *name, bool isDir) : IsDir(isDir)
+    {
+      strncpy(Name, name, MAXNAMELENGTH);
+      Name[MAXNAMELENGTH - 1] = 0;
+    }
+
+    Entry(const Entry &v) : IsDir(v.IsDir)
+    {
+      memcpy(Name, v.Name, sizeof(Name));
+    }
+  };
+  bool LIBUTILS_API listDir(const char *dirPath, std::vector<Entry> &list);
 
   inline bool LIBUTILS_API isPathSep(int sym)
   {
