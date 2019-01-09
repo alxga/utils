@@ -188,8 +188,12 @@ namespace FS
         stat(de->d_name, &stbuf);
         isDir = S_ISDIR(stbuf.st_mode);
       }
-      closedir(hDir);
+      char *ptr = de->d_name;
+      // skip "." and ".."
+      if (ptr[0] != '.' || (ptr[1] != 0 && (ptr[1] != '.' || ptr[2] != 0)))
+        list.push_back(Entry(ptr, isDir));
     }
+    closedir(hDir);
 #else
     char path[MAXPATHLENGTH];
     sprintf(path, "%s\\*", dirPath);
@@ -220,5 +224,6 @@ namespace FS
       FindClose(hFind);
     }
 #endif
+    return true;
   }
 }
