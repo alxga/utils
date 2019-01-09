@@ -149,6 +149,17 @@ namespace FS
     return true;
   }
 
+  Entry::Entry(const char *name, bool isDir) : IsDir(isDir)
+  {
+    strncpy(Name, name, MAXNAMELENGTH);
+    Name[MAXNAMELENGTH - 1] = 0;
+  }
+
+  Entry::Entry(const Entry &v) : IsDir(v.IsDir)
+  {
+    memcpy(Name, v.Name, sizeof(Name));
+  }
+
   bool listDir(const char *dirPath, std::vector<Entry> &list)
   {
     list.clear();

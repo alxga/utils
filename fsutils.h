@@ -32,16 +32,8 @@ namespace FS
     char Name[MAXNAMELENGTH];
     bool IsDir;
 
-    Entry(const char *name, bool isDir) : IsDir(isDir)
-    {
-      strncpy(Name, name, MAXNAMELENGTH);
-      Name[MAXNAMELENGTH - 1] = 0;
-    }
-
-    Entry(const Entry &v) : IsDir(v.IsDir)
-    {
-      memcpy(Name, v.Name, sizeof(Name));
-    }
+    Entry(const char *name, bool isDir);
+    Entry(const Entry &v);
   };
   bool LIBUTILS_API listDir(const char *dirPath, std::vector<Entry> &list);
 
