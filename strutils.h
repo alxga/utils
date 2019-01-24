@@ -36,6 +36,11 @@ typedef std::vector<std::string> StringVector;
   static_cast<std::ostringstream &>( \
     (std::ostringstream() << arg)).str()
 
+static inline bool StrToBool(const std::string &str)
+{
+  return str.length() > 0 && (str[0] == 'T' || str[0] == 't' || str[0] == '1');
+}
+
 static inline void LTrim(std::string &s)
 {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(),
