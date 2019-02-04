@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="math.h" />
     <ClInclude Include="distr.h" />
     <ClInclude Include="dpoint.h" />
     <ClInclude Include="except.h" />
@@ -160,6 +161,7 @@
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="math.cpp" />
     <ClCompile Include="distr.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>

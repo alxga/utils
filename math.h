@@ -5,16 +5,14 @@
   See LICENSE file in the project root for full license information.
 */
 
-#include "stdafx.h"
-#include "Utils/utils.h"
+#include "Utils/libutils.h"
 
+#ifndef MATH_HEADER_FILE_INCLUDED
+#define MATH_HEADER_FILE_INCLUDED
 
-void DelayThread(int millisec)
+namespace Utils
 {
-#ifdef WINDOWS
-  Sleep(millisec);
-#else
-  struct timeval tv = { millisec / 1000, 1000 * (millisec % 1000) };
-  select (0, 0, 0, 0, &tv);
-#endif
+  double LIBUTILS_API acosh(double v);
 }
+
+#endif // MATH_HEADER_FILE_INCLUDED
