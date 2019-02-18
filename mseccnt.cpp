@@ -47,6 +47,6 @@ unsigned int MSecCounter::elapsed() const
 #else
   struct timespec end;
   clock_gettime(CLOCK_MONOTONIC, &end);
-  return (unsigned int) (TSPEC2DBLMS(*m_start) - TSPEC2DBLMS(end));
+  return (unsigned int) (TSPEC2DBLMS(end) - TSPEC2DBLMS(*m_start));
 #endif
 }
