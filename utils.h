@@ -14,6 +14,7 @@
 #include "Utils/rand01.h"
 #include "Utils/rselect.h"
 #include "Utils/distr.h"
+#include "Utils/matrix.h"
 
 
 #ifndef UTILS_HEADER_FILE_INCLUDED
