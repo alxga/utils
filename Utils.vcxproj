@@ -152,6 +152,7 @@
     <ClInclude Include="app.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="mpimsg.h" />
+    <ClInclude Include="mseccnt.h" />
     <ClInclude Include="rand01.h" />
     <ClInclude Include="rselect.h" />
     <ClInclude Include="stdafx.h" />
@@ -181,6 +182,7 @@
     <ClCompile Include="except.cpp" />
     <ClCompile Include="fsutils.cpp" />
     <ClCompile Include="app.cpp" />
+    <ClCompile Include="mseccnt.cpp" />
     <ClCompile Include="rand01.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

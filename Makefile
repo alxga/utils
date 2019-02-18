@@ -13,13 +13,14 @@ ifdef BOOST_INC
 endif
 
 HEADERS = app.h distr.h dpoint.h except.h fsutils.h libutils.h math.h \
-          mpimsg.h rand01.h rselect.h stdafx.h strutils.h utils.h
+          matrix.h mpimsg.h mseccnt.h rand01.h rselect.h stdafx.h strutils.h \
+          utils.h
 
-SRC = app.cpp distr.cpp dpoint.cpp except.cpp fsutils.cpp math.cpp rand01.cpp \
-      strutils.cpp utils.cpp
+SRC = app.cpp distr.cpp dpoint.cpp except.cpp fsutils.cpp math.cpp mseccnt.cpp \
+      rand01.cpp strutils.cpp utils.cpp
 
-OBJ = app.o distr.o dpoint.o except.o fsutils.o math.o rand01.o \
-      strutils.o utils.o
+OBJ = app.o distr.o dpoint.o except.o fsutils.o math.o mseccnt.o \
+      rand01.o strutils.o utils.o
 
 %.o: %.cpp
 	$(CC) -c $(CFLAGS) -o $@ $<
