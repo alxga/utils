@@ -14,7 +14,7 @@
 struct timespec;
 #endif
 
-class MSecCounter
+class LIBUTILS_API MSecCounter
 {
 #ifdef WINDOWS
   unsigned int m_start;
