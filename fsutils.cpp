@@ -83,7 +83,7 @@ namespace FS
 
     char path[MAXPATHLENGTH];
     strcpy(path, dirPath);
-    
+
     if (chdir(rootDir))
       return false;
 

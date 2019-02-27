@@ -53,7 +53,7 @@ void App::setOutDir(const char *v)
 void App::initLog()
 {
   char path[MAXPATHLENGTH];
-  
+
   sprintf(path, "%s%clog_%s%c%d.log",
           wdir(), FS::pathSep(), name(), FS::pathSep(), rank());
 
@@ -91,13 +91,13 @@ void App::deinitLog()
 int App::run(int argc, char *argv[])
 {
   int retCode = 0;
-  
+
   bool ready = false;
 
   char ldir[MAXPATHLENGTH];
   sprintf(ldir, "log_%s", name());
   FS::makeDir(wdir(), ldir);
-  
+
   initLog();
 
   unsigned int seed = (unsigned int) time(NULL);
@@ -168,7 +168,7 @@ int MPIApp::run(int argc, char *argv[])
     for (int i = 1; i < mpiSize; i++)
       MPI_Ssend(&tmp, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
   }
-  
+
   initLog(); // call after MPI starting routines to have a rank
 
   unsigned int seed = ((unsigned int) time(NULL)) * (m_mpiRank + 1);
@@ -235,7 +235,7 @@ int MPIApp::main()
     {
       int msg;
       MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
-    
+
       int src = s.MPI_SOURCE;
       if (src > 0 && src < mpiSize)
       {

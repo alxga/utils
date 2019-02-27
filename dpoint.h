@@ -71,7 +71,7 @@ public:
 
   inline double y() const { return m_y; }
   inline void setY(double y) { m_y = y; }
-  
+
   double distance2D(const DPoint &v) const;
   double distanceWGS84(const DPoint &v) const;
 

@@ -15,7 +15,7 @@ class LIBUTILS_API App
   static App *sm_app;
 
   char m_name[MAXPATHLENGTH];
-  
+
   char m_wdir[MAXPATHLENGTH];
   char m_inDir[MAXPATHLENGTH];
   char m_outDir[MAXPATHLENGTH];
@@ -24,7 +24,7 @@ public:
   static inline App *app() { return sm_app; }
 
   void log(const char *txt, ...);
-  
+
   inline const char *wdir() { return m_wdir; }
   void setWDir(const char *v);
   inline const char *inDir() { return m_inDir; }

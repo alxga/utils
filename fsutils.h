@@ -25,7 +25,7 @@ namespace FS
 #else
   bool LIBUTILS_API makeDir(const char *rootDir, const char *dirPath, int imode = -1);
 #endif
-  
+
   struct Entry
   {
     static const int MAXNAMELENGTH = 256;
