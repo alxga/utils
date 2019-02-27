@@ -16,6 +16,7 @@
 #include "Utils/distr.h"
 #include "Utils/matrix.h"
 #include "Utils/mseccnt.h"
+#include "Utils/unionfnd.h"
 
 
 #ifndef UTILS_HEADER_FILE_INCLUDED
