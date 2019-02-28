@@ -7,6 +7,7 @@
 
 #include "stdafx.h"
 #include "Utils/unionfnd.h"
+#include "Utils/utils.h"
 
 
 struct UnionFindNode
@@ -37,24 +38,17 @@ UnionFind::~UnionFind()
 
 int UnionFind::find(int id)
 {
-  int tc = 0;
-  int temp[1024];
-
   int rootId = id;
   while (rootId != m_arr[rootId].m_rootId)
-  {
-    temp[tc++] = rootId;
     rootId = m_arr[rootId].m_rootId;
-  }
-  for (int i = 0; i < tc - 1; i++)
-    m_arr[temp[i]].m_rootId = rootId;
+  m_arr[id].m_rootId = rootId;
   return rootId;
 }
 
-void UnionFind::merge(int e1, int e2)
+void UnionFind::mergeDistinctRoots(int root1, int root2)
 {
-  UnionFindNode *n1 = &m_arr[e1];
-  UnionFindNode *n2 = &m_arr[e2];
+  UnionFindNode *n1 = &m_arr[root1];
+  UnionFindNode *n2 = &m_arr[root2];
   if (n1->m_rank > n2->m_rank)
     n2->m_rootId = n1->m_rootId;
   else if (n1->m_rank < n2->m_rank)
@@ -65,3 +59,22 @@ void UnionFind::merge(int e1, int e2)
     n2->m_rank ++;
   }
 }
+
+int UnionFind::countDistinct()
+{
+  bool *checks = new bool[m_count];
+  auto_del<bool> del_checks(checks, true);
+  memset(checks, 0, m_count * sizeof(bool));
+  int ret = 0;
+  for (int i = 0; i < m_count; i++)
+  {
+    int rootId = find(i);
+    if (!checks[rootId])
+    {
+      checks[rootId] = true;
+      ret++;
+    }
+  }
+  return ret;
+}
+

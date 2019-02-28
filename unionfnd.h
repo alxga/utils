@@ -23,7 +23,17 @@ public:
 
   int find(int id);
 
-  void merge(int e1, int e2);
+  void mergeDistinctRoots(int root1, int root2);
+  inline void mergeSafe(int e1, int e2)
+  {
+    int root1 = find(e1);
+    int root2 = find(e2);
+    if (root1 != root2)
+      mergeDistinctRoots(root1, root2);
+  }
+
+  inline int count() const { return m_count; }
+  int countDistinct();
 };
 
 #endif // UNIONFND_HEADER_FILE_INCLUDED
