@@ -27,6 +27,10 @@ public:
   {
   }
 
+  DPoint(double x, double y) : m_x(x), m_y(y)
+  {
+  }
+
   DPoint(const DPoint &v) : m_x(v.m_x), m_y(v.m_y)
   {
   }
