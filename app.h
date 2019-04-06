@@ -32,7 +32,8 @@ public:
   inline const char *outDir() { return m_outDir; }
   void setOutDir(const char *v);
 
-  virtual int rank() { return 0; }
+  virtual int mpiRank() { return 0; }
+  virtual int mpiSize() { return 1; }
   const char *name() { return m_name; }
 
   App(const char *name);
@@ -58,12 +59,32 @@ public:
   virtual bool createDirs(int ix) = 0;
 };
 
+class IMPISendMgr
+{
+public:
+  virtual int SendResultsMsgData(int msgData) = 0;
+  virtual int Send(const void *buf, int count, int datatype) = 0;
+};
+
+class IMPIRecvMgr
+{
+protected:
+  int m_resultsMsgData;
+public:
+  IMPIRecvMgr() : m_resultsMsgData(0)
+  {
+  }
+  virtual int ResultsMsgData() const { return m_resultsMsgData; }
+  virtual int Recv(void *buf, int count, int datatype) = 0;
+};
+
 class LIBUTILS_API MPIApp : public App
 {
   static MPIApp *sm_mpiApp;
 
   IDataPool *m_dp;
   int m_mpiRank;
+  int m_mpiSize;
 
 protected:
   virtual int main();
@@ -71,8 +92,8 @@ protected:
 
   virtual void initMPITypes() {}
   virtual void deinitMPITypes() {}
-  virtual void receiveResults(int ix, int src, int msgData) {}
-  virtual void sendResults(int ix) {}
+  virtual void receiveResults(IMPIRecvMgr &mgr, int ix) {}
+  virtual void sendResults(IMPISendMgr &mgr, int ix) {}
   virtual void calcIndex(int ix) = 0;
 
 public:
@@ -80,7 +101,8 @@ public:
 
   MPIApp(const char *name, IDataPool *dp);
 
-  virtual int rank() { return m_mpiRank; }
+  virtual int mpiRank() { return m_mpiRank; }
+  virtual int mpiSize() { return m_mpiSize; }
 
   virtual int run(int argc, char *argv[]);
 };

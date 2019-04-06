@@ -11,6 +11,7 @@
 #include <list>
 #include <cctype>
 #include <algorithm>
+#include <functional>
 #include "Utils/libutils.h"
 
 #ifndef STRUTILS_HEADER_FILE_INCLUDED
@@ -33,7 +34,7 @@ typedef std::list<std::string> StringList;
 typedef std::vector<std::string> StringVector;
 
 #define ToString(arg) \
-  static_cast<std::ostringstream &>( \
+  static_cast<const std::ostringstream &>( \
     (std::ostringstream() << arg)).str()
 
 static inline bool StrToBool(const std::string &str)

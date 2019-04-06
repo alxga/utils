@@ -55,7 +55,7 @@ void App::initLog()
   char path[MAXPATHLENGTH];
 
   sprintf(path, "%s%clog_%s%c%d.log",
-          wdir(), FS::pathSep(), name(), FS::pathSep(), rank());
+          wdir(), FS::pathSep(), name(), FS::pathSep(), mpiRank());
 
   m_logFile = fopen(path, "wb");
   if (m_logFile == NULL)
@@ -103,7 +103,7 @@ int App::run(int argc, char *argv[])
   unsigned int seed = (unsigned int) time(NULL);
   srand(seed);
   log("Random seeded with %X", seed);
-  log("Our rank is %d", rank());
+  log("Our rank is %d of %d processes", mpiRank(), mpiSize());
 
   try
   {
@@ -120,6 +120,87 @@ int App::run(int argc, char *argv[])
   return retCode;
 }
 
+
+
+class MPISendMgr : public IMPISendMgr
+{
+  int m_dst;
+public:
+  MPISendMgr(int dst) : m_dst(dst)
+  {
+  }
+  virtual int SendResultsMsgData(int msgData)
+  {
+    int msg = MSG(WMSG_RESULTS, msgData);
+    return MPI_Ssend(&msg, 1, MPI_INT, m_dst, 0, MPI_COMM_WORLD);
+  }
+  virtual int Send(const void *buf, int count, int datatype)
+  {
+    return MPI_Ssend(buf, count, datatype, m_dst, 0, MPI_COMM_WORLD);
+  }
+};
+
+class MPIRecvMgr : public IMPIRecvMgr
+{
+  int m_src;
+public:
+  MPIRecvMgr(int src, int resultsMsgData) : m_src(src)
+  {
+    m_resultsMsgData = resultsMsgData;
+  }
+  virtual int Recv(void *buf, int count, int datatype)
+  {
+    MPI_Status s;
+    return MPI_Recv(buf, count, datatype, m_src, 0, MPI_COMM_WORLD, &s);
+  }
+};
+
+class MPIDbgSendRecvMgr : public IMPISendMgr, public IMPIRecvMgr
+{
+  struct Buffer
+  {
+    char *data;
+    int size;
+  };
+  std::queue<Buffer> m_buffers;
+
+public:
+  inline bool hasData() const
+  {
+    return m_buffers.size() > 0;
+  }
+  virtual int SendResultsMsgData(int msgData)
+  {
+    m_resultsMsgData = msgData;
+    return MPI_SUCCESS;
+  }
+  virtual int Send(const void *buf, int count, int datatype)
+  {
+    int sz;
+    MPI_Type_size(datatype, &sz);
+    sz *= count;
+
+    Buffer b = { new char[sz], sz };
+    m_buffers.push(b);
+    memcpy(b.data, buf, sz);
+    return MPI_SUCCESS;
+  }
+  virtual int Recv(void *buf, int count, int datatype)
+  {
+    int sz;
+    MPI_Type_size(datatype, &sz);
+    sz *= count;
+
+    Buffer b = m_buffers.front();
+    if (b.size != sz)
+      throw Exception("MPI read calls should be for the same amount of bytes "
+                      "as previous MPI write calls in DEBUG emulation runs");
+    memcpy(buf, b.data, sz);
+    delete[] b.data;
+    m_buffers.pop();
+    return MPI_SUCCESS;
+  }
+};
 
 
 
@@ -148,6 +229,7 @@ int MPIApp::run(int argc, char *argv[])
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &m_mpiRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &m_mpiSize);
 
   initMPITypes();
 
@@ -163,9 +245,8 @@ int MPIApp::run(int argc, char *argv[])
     sprintf(ldir, "log_%s", name());
     FS::makeDir(wdir(), ldir);
 
-    int mpiSize, tmp = 1;
-    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
-    for (int i = 1; i < mpiSize; i++)
+    int tmp = 1;
+    for (int i = 1; i < m_mpiSize; i++)
       MPI_Ssend(&tmp, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
   }
 
@@ -174,7 +255,7 @@ int MPIApp::run(int argc, char *argv[])
   unsigned int seed = ((unsigned int) time(NULL)) * (m_mpiRank + 1);
   srand(seed);
   log("Random seeded with %X", seed);
-  log("Our rank is %d", m_mpiRank);
+  log("Our rank is %d of %d processes", m_mpiRank, m_mpiSize);
 
   try
   {
@@ -205,22 +286,20 @@ int MPIApp::run(int argc, char *argv[])
 int MPIApp::main()
 {
 #ifdef HAVE_MPI
-  int mpiSize;
   MPI_Status s;
-  MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
 
   bool ready = m_dp->checkFS();
   log("Main ready state is %s", ready ? "true" : "false");
 
-  int *tasks = new int [mpiSize];
+  int *tasks = new int [m_mpiSize];
   auto_del<int> del_tasks(tasks, true);
-  for (int i = 0; i < mpiSize; i++)
+  for (int i = 0; i < m_mpiSize; i++)
     tasks[i] = -1;
 
   if (ready)
   {
     int msg = MSG(MSG_QUIT, 0);
-    for (int i = 1; i < mpiSize; i++)
+    for (int i = 1; i < m_mpiSize; i++)
     {
       MPI_Recv(&msg, 1, MPI_INT, i, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
       MPI_Ssend(&msg, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
@@ -230,47 +309,67 @@ int MPIApp::main()
   {
     m_dp->resetIndex();
 
-    int procsFinished = 0;
-    while (procsFinished < mpiSize - 1)
-    {
-      int msg;
-      MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
-
-      int src = s.MPI_SOURCE;
-      if (src > 0 && src < mpiSize)
+    if (m_mpiSize > 1)
+    { // real MPI scenario
+      int procsFinished = 0;
+      while (procsFinished < m_mpiSize - 1)
       {
-        int cmd = MSG_CMD(msg);
+        int msg;
+        MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+                 MPI_COMM_WORLD, &s);
 
-        if (cmd == WMSG_RESULTS)
+        int src = s.MPI_SOURCE;
+        if (src > 0 && src < m_mpiSize)
         {
-          int ix = tasks[src];
-          receiveResults(ix, src, MSG_DATA(msg));
-          tasks[src] = -1;
+          int cmd = MSG_CMD(msg);
+
+          if (cmd == WMSG_RESULTS)
+          {
+            int ix = tasks[src];
+            MPIRecvMgr mgr(src, MSG_DATA(msg));
+            receiveResults(mgr, ix);
+            tasks[src] = -1;
+          }
+          if (cmd == WMSG_READY)
+          {
+            log("Process %d is ready", src);
+
+            int ix = m_dp->nextIndex();
+            if (ix < 0 || !m_dp->createDirs(ix))
+            {
+              int msg = MSG(MSG_QUIT, 0);
+              MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
+              procsFinished ++;
+            }
+            else
+            {
+              tasks[src] = ix;
+              int msg = MSG(MSG_RUN, ix);
+              MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
+            }
+          }
         }
-        if (cmd == WMSG_READY)
+        else
+          break;
+      }
+    }
+    else
+    { // emulate MPI in a single process/thread for debugging
+      while (true)
+      {
+        int ix = m_dp->nextIndex();
+        if (ix < 0 || !m_dp->createDirs(ix))
+          break;
+        else
         {
-          log("Process %d is ready", src);
-
-          int ix = m_dp->nextIndex();
-          if (ix < 0 || !m_dp->createDirs(ix))
-          {
-            int msg = MSG(MSG_QUIT, 0);
-            MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
-            procsFinished ++;
-          }
-          else
-          {
-            tasks[src] = ix;
-            int msg = MSG(MSG_RUN, ix);
-            MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
-          }
+          MPIDbgSendRecvMgr sendRecvMgr;
+          calcIndex(ix);
+          sendResults(sendRecvMgr, ix);
+          if (sendRecvMgr.hasData())
+            receiveResults(sendRecvMgr, ix);
         }
       }
-      else
-        break;
     }
-
-    ready = mpiSize > 1;
   }
 
   log("Returning from runMainMPI");
@@ -285,6 +384,7 @@ int MPIApp::main()
 int MPIApp::mainMPI()
 {
 #ifdef HAVE_MPI
+  MPISendMgr sendRecvMgr(0);
   while (true)
   {
     MPI_Status s;
@@ -297,7 +397,7 @@ int MPIApp::mainMPI()
       break;
     int ix = MSG_DATA(msg);
     calcIndex(ix);
-    sendResults(ix);
+    sendResults(sendRecvMgr, ix);
   }
 
   return 0;

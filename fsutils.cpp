@@ -8,6 +8,9 @@
 #include "stdafx.h"
 #include "Utils/fsutils.h"
 
+// GetVersionExA is deprecated
+#pragma warning(disable:4996)
+
 using namespace std;
 
 
