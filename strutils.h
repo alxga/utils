@@ -60,6 +60,10 @@ static inline void Trim(std::string &s) {
     RTrim(s);
 }
 
+static inline bool StrIsWhiteSpace(const std::string &str) {
+  return str.find_first_not_of(" \t\r\n") == std::string::npos;
+}
+
 
 template<typename T>
   void SplitStr(const std::string &str, T &tokens,
