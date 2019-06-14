@@ -20,13 +20,16 @@ App::App(const char *name)
 {
   if (sm_app != NULL)
     throw Exception("Multiple instances of the App class");
-  sm_app = this;
+
+  m_logFile = NULL;
 
   strcpy(m_name, name);
 
   strcpy(m_wdir, FS::curDir());
   strcpy(m_inDir, m_wdir);
   strcpy(m_outDir, m_wdir);
+
+  sm_app = this;
 }
 
 App::~App()
