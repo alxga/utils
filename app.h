@@ -6,6 +6,7 @@
 */
 
 #include "fsutils.h"
+#include "cmdarg.h"
 
 #ifndef APP_HEADER_FILE_INCLUDED
 #define APP_HEADER_FILE_INCLUDED
@@ -23,7 +24,7 @@ class LIBUTILS_API App
 public:
   static inline App *app() { return sm_app; }
 
-  void log(const char *txt, ...);
+  void log(const char *txt, ...) const;
 
   inline const char *wdir() { return m_wdir; }
   void setWDir(const char *v);
@@ -41,7 +42,14 @@ public:
 
   virtual int run(int argc, char *argv[]);
 
+  virtual void parseArgs(int argc, char *argv[]);
+  bool hasArg(const char *name) const;
+  std::string argValue(const char *name) const;
+  double argNum(const char *name) const;
+
 protected:
+  StrCmdArgMap *m_args;
+
   FILE *m_logFile;
   void initLog();
   void deinitLog();

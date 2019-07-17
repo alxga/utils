@@ -23,6 +23,8 @@ App::App(const char *name)
 
   m_logFile = NULL;
 
+  m_args = new StrCmdArgMap();
+
   strcpy(m_name, name);
 
   strcpy(m_wdir, FS::curDir());
@@ -35,6 +37,8 @@ App::App(const char *name)
 App::~App()
 {
   sm_app = NULL;
+
+  delete m_args;
 }
 
 void App::setWDir(const char *v)
@@ -65,7 +69,7 @@ void App::initLog()
     throw Exception("Unable to open the log file for writing"); 
 }
 
-void App::log(const char *txt, ...)
+void App::log(const char *txt, ...) const
 {
   if (m_logFile != NULL)
   {
@@ -121,6 +125,52 @@ int App::run(int argc, char *argv[])
   deinitLog();
 
   return retCode;
+}
+
+inline bool App::hasArg(const char *name) const
+{
+  return m_args->find(name) != m_args->end();
+}
+inline std::string App::argValue(const char *name) const
+{
+  return (*m_args)[name].m_value;
+}
+inline double App::argNum(const char *name) const
+{
+  return (*m_args)[name].m_num;
+}
+
+void App::parseArgs(int argc, char *argv[])
+{
+  m_args->clear();
+
+  for (int i = 0; i < argc; i++)
+  {
+    CmdArg arg;
+    arg.parse(argv[i]);
+    if (arg.m_name.length() > 0)
+      (*m_args)[arg.m_name] = arg;
+  }
+
+  if (hasArg("wdir"))
+    setWDir(argValue("wdir").c_str());
+  else
+    throw Exception("Working directory must be specified with command argument -wdir=<path>");
+
+  if (hasArg("indir"))
+    setInDir(argValue("indir").c_str());
+  else
+    setInDir(wdir());
+
+  if (hasArg("outdir"))
+    setOutDir(argValue("outdir").c_str());
+  else
+    setOutDir(wdir());
+
+  if (!FS::fsEntryExist(wdir()) ||
+      !FS::fsEntryExist(outDir()) ||
+      !FS::fsEntryExist(inDir()))
+    throw Exception("Incorrect working, output, or input directory specified");
 }
 
 

@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="cmdarg.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="distr.h" />
     <ClInclude Include="dpoint.h" />
