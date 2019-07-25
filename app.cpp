@@ -175,6 +175,15 @@ void App::parseArgs(int argc, char *argv[])
 
 
 
+const char *IDataPool::indexLogStr(int ix)
+{
+  static char ret[100];
+  sprintf(ret, "Index %d", ix);
+  return ret;
+}
+
+
+
 class MPISendMgr : public IMPISendMgr
 {
   int m_dst;
@@ -381,16 +390,23 @@ int MPIApp::main()
             int ix = tasks[src];
             MPIRecvMgr mgr(src, MSG_DATA(msg));
             receiveResults(mgr, ix);
+            log("Received results for %s from process %d",
+                m_dp->indexLogStr(ix), src);
             tasks[src] = -1;
           }
           if (cmd == WMSG_READY)
           {
-            log("Process %d is ready", src);
+            if (tasks[src] < 0)
+              log("Process %d is ready, no previous tasks", src);
+            else
+              log("Process %d is ready, previous task was %s",
+                  src, m_dp->indexLogStr(tasks[src]));
 
             int ix = m_dp->nextIndex();
             if (ix < 0 || !m_dp->createDirs(ix))
             {
               int msg = MSG(MSG_QUIT, 0);
+              log("Quitting process %d", src);
               MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
               procsFinished ++;
             }
@@ -398,6 +414,7 @@ int MPIApp::main()
             {
               tasks[src] = ix;
               int msg = MSG(MSG_RUN, ix);
+              log("Running %s on process %d", m_dp->indexLogStr(ix), src);
               MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
             }
           }

@@ -58,13 +58,14 @@ protected:
 };
 
 
-class IDataPool
+class LIBUTILS_API IDataPool
 {
 public:
   virtual bool checkFS() = 0;
   virtual void resetIndex() = 0;
   virtual int nextIndex() = 0;
   virtual bool createDirs(int ix) = 0;
+  virtual const char *indexLogStr(int ix);
 };
 
 class IMPISendMgr
