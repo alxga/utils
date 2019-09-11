@@ -127,15 +127,15 @@ int App::run(int argc, char *argv[])
   return retCode;
 }
 
-inline bool App::hasArg(const char *name) const
+bool App::hasArg(const char *name) const
 {
   return m_args->find(name) != m_args->end();
 }
-inline std::string App::argValue(const char *name) const
+std::string App::argValue(const char *name) const
 {
   return (*m_args)[name].m_value;
 }
-inline double App::argNum(const char *name) const
+double App::argNum(const char *name) const
 {
   return (*m_args)[name].m_num;
 }
