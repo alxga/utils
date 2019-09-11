@@ -72,7 +72,7 @@ class IMPISendMgr
 {
 public:
   virtual int SendResultsMsgData(int msgData) = 0;
-  virtual int Send(const void *buf, int count, int datatype) = 0;
+  virtual int Send(const void *buf, int count, void *pDatatype) = 0;
 };
 
 class IMPIRecvMgr
@@ -84,7 +84,7 @@ public:
   {
   }
   virtual int ResultsMsgData() const { return m_resultsMsgData; }
-  virtual int Recv(void *buf, int count, int datatype) = 0;
+  virtual int Recv(void *buf, int count, void *pDatatype) = 0;
 };
 
 class LIBUTILS_API MPIApp : public App

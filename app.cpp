@@ -183,6 +183,7 @@ const char *IDataPool::indexLogStr(int ix)
 }
 
 
+#ifdef HAVE_MPI
 
 class MPISendMgr : public IMPISendMgr
 {
@@ -196,9 +197,10 @@ public:
     int msg = MSG(WMSG_RESULTS, msgData);
     return MPI_Ssend(&msg, 1, MPI_INT, m_dst, 0, MPI_COMM_WORLD);
   }
-  virtual int Send(const void *buf, int count, int datatype)
+  virtual int Send(const void *buf, int count, void *pDatatype)
   {
-    return MPI_Ssend(buf, count, datatype, m_dst, 0, MPI_COMM_WORLD);
+    MPI_Datatype* pdt = (MPI_Datatype*)pDatatype;
+    return MPI_Ssend(buf, count, *pdt, m_dst, 0, MPI_COMM_WORLD);
   }
 };
 
@@ -210,10 +212,11 @@ public:
   {
     m_resultsMsgData = resultsMsgData;
   }
-  virtual int Recv(void *buf, int count, int datatype)
+  virtual int Recv(void *buf, int count, void *pDatatype)
   {
     MPI_Status s;
-    return MPI_Recv(buf, count, datatype, m_src, 0, MPI_COMM_WORLD, &s);
+    MPI_Datatype* pdt = (MPI_Datatype*)pDatatype;
+    return MPI_Recv(buf, count, *pdt, m_src, 0, MPI_COMM_WORLD, &s);
   }
 };
 
@@ -236,10 +239,11 @@ public:
     m_resultsMsgData = msgData;
     return MPI_SUCCESS;
   }
-  virtual int Send(const void *buf, int count, int datatype)
+  virtual int Send(const void *buf, int count, void* pDatatype)
   {
     int sz;
-    MPI_Type_size(datatype, &sz);
+    MPI_Datatype* pdt = (MPI_Datatype*)pDatatype;
+    MPI_Type_size(*pdt, &sz);
     sz *= count;
 
     Buffer b = { new char[sz], sz };
@@ -247,10 +251,11 @@ public:
     memcpy(b.data, buf, sz);
     return MPI_SUCCESS;
   }
-  virtual int Recv(void *buf, int count, int datatype)
+  virtual int Recv(void *buf, int count, void* pDatatype)
   {
     int sz;
-    MPI_Type_size(datatype, &sz);
+    MPI_Datatype* pdt = (MPI_Datatype*)pDatatype;
+    MPI_Type_size(*pdt, &sz);
     sz *= count;
 
     Buffer b = m_buffers.front();
@@ -264,6 +269,7 @@ public:
   }
 };
 
+#endif
 
 
 MPIApp *MPIApp::sm_mpiApp = NULL;
