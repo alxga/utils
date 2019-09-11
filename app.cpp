@@ -329,7 +329,11 @@ int MPIApp::run(int argc, char *argv[])
   catch (const Exception &e)
   {
     log("Unhandled exception: %s", e.message());
-    retCode = -1;
+    log("Aborting MPI from process %d", m_mpiRank);
+    MPI_Abort(MPI_COMM_WORLD, -1);
+    // the code below should not execute as MPI_Abort does not return
+    log("Failed to abort MPI from process %d", m_mpiRank);
+    return -1;
   }
 
   deinitMPITypes();
@@ -353,92 +357,102 @@ int MPIApp::main()
   bool ready = m_dp->checkFS();
   log("Main ready state is %s", ready ? "true" : "false");
 
-  int *tasks = new int [m_mpiSize];
+  int *tasks = new int[m_mpiSize];
   auto_del<int> del_tasks(tasks, true);
   for (int i = 0; i < m_mpiSize; i++)
     tasks[i] = -1;
 
-  if (ready)
-  {
-    int msg = MSG(MSG_QUIT, 0);
-    for (int i = 1; i < m_mpiSize; i++)
+  std::list<int> tasksSyncing;
+  m_dp->resetIndex();
+
+  if (m_mpiSize > 1)
+  { // real MPI scenario
+#ifdef _DEBUG
+    MessageBoxA(0, "Master MPI", "Master MPI", MB_OK);
+#endif
+
+    int procsFinished = 0;
+    while (procsFinished < m_mpiSize - 1)
     {
-      MPI_Recv(&msg, 1, MPI_INT, i, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
-      MPI_Ssend(&msg, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+      int msg;
+      MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+               MPI_COMM_WORLD, &s);
+
+      int src = s.MPI_SOURCE;
+      if (src > 0 && src < m_mpiSize)
+      {
+        int cmd = MSG_CMD(msg);
+
+        if (cmd == WMSG_RESULTS)
+        {
+          int ix = tasks[src];
+          MPIRecvMgr mgr(src, MSG_DATA(msg));
+          receiveResults(mgr, ix);
+          log("Received results for %s from process %d",
+              m_dp->indexLogStr(ix), src);
+        }
+        if (cmd == WMSG_READY)
+        {
+          if (tasks[src] < 0)
+            log("Process %d is ready, no previous tasks", src);
+          else
+            log("Process %d is ready, previous task was %s",
+                src, m_dp->indexLogStr(tasks[src]));
+
+          tasks[src] = -1;
+
+          tasksSyncing.push_back(src);
+
+          while (!iterationSync() && tasksSyncing.size() > 0)
+          {
+            int task = tasksSyncing.front();
+            tasksSyncing.pop_front();
+            int ix = m_dp->nextIndex();
+            if (ix < 0)
+            {
+              int msg = MSG(MSG_QUIT, 0);
+              log("Quitting process %d", task);
+              MPI_Ssend(&msg, 1, MPI_INT, task, 0, MPI_COMM_WORLD);
+              procsFinished++;
+            }
+            else
+            {
+              if (!m_dp->createDirs(ix))
+                throw Exception("Unable to create an output directory");
+
+              tasks[task] = ix;
+              int msg = MSG(MSG_RUN, ix);
+              log("Running %s on process %d", m_dp->indexLogStr(ix), task);
+              MPI_Ssend(&msg, 1, MPI_INT, task, 0, MPI_COMM_WORLD);
+            }
+          }
+        }
+      }
+      else
+        break;
     }
   }
   else
-  {
-    m_dp->resetIndex();
+  { // emulate MPI in a single process/thread for debugging
+    while (true)
+    {
+      // let the master process aggregate results
+      // as we only have one worker process this should never return true
+      if (iterationSync())
+        throw Exception("Unexpected operation");
 
-    if (m_mpiSize > 1)
-    { // real MPI scenario
-      int procsFinished = 0;
-      while (procsFinished < m_mpiSize - 1)
-      {
-        int msg;
-        MPI_Recv(&msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
-                 MPI_COMM_WORLD, &s);
+      int ix = m_dp->nextIndex();
+      if (ix < 0)
+        break;
 
-        int src = s.MPI_SOURCE;
-        if (src > 0 && src < m_mpiSize)
-        {
-          int cmd = MSG_CMD(msg);
+      if (!m_dp->createDirs(ix))
+        throw Exception("Unable to create an output directory");
 
-          if (cmd == WMSG_RESULTS)
-          {
-            int ix = tasks[src];
-            MPIRecvMgr mgr(src, MSG_DATA(msg));
-            receiveResults(mgr, ix);
-            log("Received results for %s from process %d",
-                m_dp->indexLogStr(ix), src);
-            tasks[src] = -1;
-          }
-          if (cmd == WMSG_READY)
-          {
-            if (tasks[src] < 0)
-              log("Process %d is ready, no previous tasks", src);
-            else
-              log("Process %d is ready, previous task was %s",
-                  src, m_dp->indexLogStr(tasks[src]));
-
-            int ix = m_dp->nextIndex();
-            if (ix < 0 || !m_dp->createDirs(ix))
-            {
-              int msg = MSG(MSG_QUIT, 0);
-              log("Quitting process %d", src);
-              MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
-              procsFinished ++;
-            }
-            else
-            {
-              tasks[src] = ix;
-              int msg = MSG(MSG_RUN, ix);
-              log("Running %s on process %d", m_dp->indexLogStr(ix), src);
-              MPI_Ssend(&msg, 1, MPI_INT, src, 0, MPI_COMM_WORLD);
-            }
-          }
-        }
-        else
-          break;
-      }
-    }
-    else
-    { // emulate MPI in a single process/thread for debugging
-      while (true)
-      {
-        int ix = m_dp->nextIndex();
-        if (ix < 0 || !m_dp->createDirs(ix))
-          break;
-        else
-        {
-          MPIDbgSendRecvMgr sendRecvMgr;
-          calcIndex(ix);
-          sendResults(sendRecvMgr, ix);
-          if (sendRecvMgr.hasData())
-            receiveResults(sendRecvMgr, ix);
-        }
-      }
+      MPIDbgSendRecvMgr sendRecvMgr;
+      calcIndex(ix);
+      sendResults(sendRecvMgr, ix);
+      if (sendRecvMgr.hasData())
+        receiveResults(sendRecvMgr, ix);
     }
   }
 

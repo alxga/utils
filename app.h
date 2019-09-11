@@ -105,6 +105,8 @@ protected:
   virtual void sendResults(IMPISendMgr &mgr, int ix) {}
   virtual void calcIndex(int ix) = 0;
 
+  virtual bool iterationSync() { return false; }
+
 public:
   static inline MPIApp *mpiApp() { return sm_mpiApp; }
 
