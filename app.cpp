@@ -114,7 +114,9 @@ int App::run(int argc, char *argv[])
 
   try
   {
+    beforeMain();
     retCode = main();
+    afterMain();
   }
   catch (const Exception &e)
   {
@@ -327,10 +329,12 @@ int MPIApp::run(int argc, char *argv[])
 
   try
   {
+    beforeMain();
     if (m_mpiRank == 0)
       retCode = main();
     else
       retCode = mainMPI();
+    afterMain();
   }
   catch (const Exception &e)
   {

@@ -54,7 +54,9 @@ protected:
   void initLog();
   void deinitLog();
 
+  virtual void beforeMain() {}
   virtual int main() = 0;
+  virtual void afterMain() {}
 };
 
 
