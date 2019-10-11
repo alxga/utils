@@ -413,7 +413,7 @@ int MPIApp::main()
 
           tasksSyncing.push_back(src);
 
-          while (!iterationSync() && tasksSyncing.size() > 0)
+          while (tasksSyncing.size() > 0 && !iterationSync())
           {
             int task = tasksSyncing.front();
             tasksSyncing.pop_front();
