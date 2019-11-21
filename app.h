@@ -35,7 +35,7 @@ public:
 
   virtual int mpiRank() { return 0; }
   virtual int mpiSize() { return 1; }
-  const char *name() { return m_name; }
+  const char *name() const { return m_name; }
 
   App(const char *name);
   virtual ~App();
@@ -50,6 +50,8 @@ public:
 protected:
   StrCmdArgMap *m_args;
 
+  int m_logDirId;
+  const char *logDirName() const;
   FILE *m_logFile;
   void initLog();
   void deinitLog();

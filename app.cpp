@@ -22,6 +22,7 @@ App::App(const char *name)
     throw Exception("Multiple instances of the App class");
 
   m_logFile = NULL;
+  m_logDirId = -1;
 
   m_args = new StrCmdArgMap();
 
@@ -57,13 +58,22 @@ void App::setOutDir(const char *v)
 }
 
 
+const char *App::logDirName() const
+{
+  static char ret[MAXPATHLENGTH];
+  if (m_logDirId < 1)
+    sprintf("log_%s", name());
+  else
+    sprintf("log_%s-%d", name(), m_logDirId);
+  return ret;
+}
+
 void App::initLog()
 {
   char path[MAXPATHLENGTH];
+  const char ps = FS::pathSep();
 
-  sprintf(path, "%s%clog_%s%c%d.log",
-          wdir(), FS::pathSep(), name(), FS::pathSep(), mpiRank());
-
+  sprintf(path, "%s%c%s%c%d.log", wdir(), ps, logDirName(), ps, mpiRank());
   m_logFile = fopen(path, "wb");
   if (m_logFile == NULL)
     throw Exception("Unable to open the log file for writing"); 
@@ -102,8 +112,15 @@ int App::run(int argc, char *argv[])
   bool ready = false;
 
   char ldir[MAXPATHLENGTH];
-  sprintf(ldir, "log_%s", name());
-  FS::makeDir(wdir(), ldir);
+  const char ps = FS::pathSep();
+  m_logDirId = 0;
+  sprintf(ldir, "%s%c%s", wdir(), ps, logDirName());
+  while (FS::fsEntryExist(ldir))
+  {
+    m_logDirId++;
+    sprintf(ldir, "%s%c%s", wdir(), ps, logDirName());
+  }
+  FS::makeDir(wdir(), logDirName());
 
   initLog();
 
@@ -305,19 +322,24 @@ int MPIApp::run(int argc, char *argv[])
 
   if (m_mpiRank != 0)
   {
-    int tmp = 0;
     MPI_Status s;
-    MPI_Recv(&tmp, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
+    MPI_Recv(&m_logDirId, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &s);
   }
   else
   {
     char ldir[MAXPATHLENGTH];
-    sprintf(ldir, "log_%s", name());
-    FS::makeDir(wdir(), ldir);
+    const char ps = FS::pathSep();
+    m_logDirId = 0;
+    sprintf(ldir, "%s%c%s", wdir(), ps, logDirName());
+    while (FS::fsEntryExist(ldir))
+    {
+      m_logDirId++;
+      sprintf(ldir, "%s%c%s", wdir(), ps, logDirName());
+    }
+    FS::makeDir(wdir(), logDirName());
 
-    int tmp = 1;
     for (int i = 1; i < m_mpiSize; i++)
-      MPI_Ssend(&tmp, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+      MPI_Ssend(&m_logDirId, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
   }
 
   initLog(); // call after MPI starting routines to have a rank
