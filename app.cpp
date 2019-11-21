@@ -62,9 +62,9 @@ const char *App::logDirName() const
 {
   static char ret[MAXPATHLENGTH];
   if (m_logDirId < 1)
-    sprintf("log_%s", name());
+    sprintf(ret, "log_%s", name());
   else
-    sprintf("log_%s-%d", name(), m_logDirId);
+    sprintf(ret, "log_%s-%d", name(), m_logDirId);
   return ret;
 }
 
