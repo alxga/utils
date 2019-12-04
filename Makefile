@@ -1,5 +1,12 @@
 LIB =
-CFLAGS = -O2 -fpic -std=gnu++0x -I..
+WARNS = -Wno-unused-result -Wno-format-overflow
+CFLAGS = -fpic -std=gnu++0x -I.. $(WARNS)
+
+ifneq ($(VSCFG), LinuxRelease)
+  CFLAGS += -g
+else
+  CFLAGS += -O2
+endif
 
 ifdef HAVE_MPI
   CC = mpicxx
@@ -27,7 +34,7 @@ OBJ = app.o distr.o dpoint.o except.o fsutils.o math.o mseccnt.o \
 
 libutils.so : $(OBJ)
 	$(CC) -shared -o $@ $(OBJ) $(LIB)
-	rm $(OBJ)
+#	rm $(OBJ)
 	cp $@ ../so
 
 clean:
