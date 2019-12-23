@@ -52,7 +52,7 @@ template<typename T>
 
     virtual ~RandomSelector()
     {
-      delete [] m_ptr;
+      delete[] m_ptr;
       delete m_indexer;
     }
 
